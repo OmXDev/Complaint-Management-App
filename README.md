@@ -1,156 +1,191 @@
 # Complaint Management System
 
-A full-stack web application built with Next.js 15, TypeScript, MongoDB, and Nodemailer for managing customer complaints with separate user and admin interfaces.
+A full-stack web application built with **Next.js 15**, **TypeScript**, **MongoDB**, and **Nodemailer** for managing customer complaints with dedicated user and admin interfaces.
 
-## Features
+## ✨ Features
 
-- **User Authentication**: Secure login/signup with email verification using OTP
-- **Role-based Access**: Separate dashboards for users and administrators
-- **Complaint Management**: Users can submit complaints, admins can manage and update status
-- **Email Notifications**: Automated email notifications for complaint submissions and status updates
-- **Responsive Design**: Works seamlessly across desktop and mobile devices
-- **Real-time Updates**: Dynamic status updates with email notifications
+- **User Authentication** – Secure login/signup with email verification via OTP.
+- **Role-Based Access** – Separate dashboards for users and administrators.
+- **Complaint Management** – Users can submit complaints; admins can update statuses and manage records.
+- **Email Notifications** – Automated email alerts for complaint submissions and status changes.
+- **Responsive Design** – Fully functional across desktop and mobile devices.
+- **Real-Time Updates** – Instant status changes with live email notifications.
 
-## Tech Stack
+## 🛠 Tech Stack
 
-- **Frontend**: Next.js 15 (App Router), React 18, TypeScript
-- **Styling**: Tailwind CSS, Radix UI components
-- **Backend**: Next.js API Routes, Server Actions
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT tokens with secure cookie storage
-- **Email Service**: Nodemailer (Gmail SMTP)
-- **Validation**: Zod schema validation
+- **Frontend:** Next.js 15 (App Router), React 18, TypeScript
+- **Styling:** Tailwind CSS, Radix UI Components
+- **Backend:** Next.js API Routes, Server Actions
+- **Database:** MongoDB with Mongoose ODM
+- **Authentication:** JWT tokens with secure cookie storage
+- **Email Service:** Nodemailer (Gmail SMTP or any SMTP provider)
+- **Validation:** Zod schema validation
 
-## Prerequisites
+## 📋 Prerequisites
 
-Before running this application, make sure you have:
+Before running this application, ensure you have:
 
-- Node.js 18+ installed
-- MongoDB database (local or cloud)
-- Gmail account for email notifications (or other SMTP service)
+- **Node.js 18+** installed
+- A **MongoDB** database (local or cloud instance)
+- A **Gmail account** or other SMTP service for sending email notifications
 
-## Installation
+
+## 🚀 Installation
 
 1. **Clone the repository**
-   \`\`\`bash
+   ```bash
    git clone <repository-url>
    cd complaint-management-app
-   \`\`\`
+
 
 2. **Install dependencies**
-   \`\`\`bash
+   ```bash
    npm install
    # or
    yarn install
-   \`\`\`
+   ```
 
 3. **Set up environment variables**
    
    Create a `.env.local` file in the root directory:
-   \`\`\`env
+
+   ```env
    # Database Configuration
    MONGODB_URI=mongodb://localhost:27017/complaint-management
-   # or for MongoDB Atlas:
-   # MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/complaint-management
+   # For MongoDB Atlas:
+   # MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/complaint-management
 
-   # JWT Secret (generate a secure random string)
-   JWT_SECRET=your-super-secure-jwt-secret-key-here
+   # JWT Secret (use a secure, random string)
+   JWT_SECRET=your-super-secure-jwt-secret-key
 
-   # Email Configuration (Gmail)
+   # Email Configuration (Gmail SMTP or any SMTP provider)
    EMAIL_USER=your-email@gmail.com
    EMAIL_PASS=your-app-password
 
-   # Base URL (for production deployment)
+   # Base URL (change for production)
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
-   \`\`\`
+   ```
 
-## MongoDB Setup
+## 🗄 MongoDB Setup
 
-### Option 1: Local MongoDB
-1. Install MongoDB locally
-2. Start MongoDB service
-3. Use connection string: `mongodb://localhost:27017/complaint-management`
+### **Option 1: Local MongoDB**
+1. Install MongoDB locally from the [official website](https://www.mongodb.com/try/download/community).
+2. Start the MongoDB service.
+3. Use the connection string in your `.env.local` file:
+   ```env
+   MONGODB_URI=mongodb://localhost:27017/complaint-management
 
 ### Option 2: MongoDB Atlas (Cloud)
-1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
-2. Create a new cluster
-3. Get connection string from "Connect" → "Connect your application"
-4. Replace `<username>`, `<password>`, and `<cluster-url>` in connection string
+1. Create an account at [MongoDB Atlas](https://www.mongodb.com/atlas).
+2. Create a new cluster.
+3. From your cluster dashboard, click **Connect → Connect your application**.
+4. Copy the provided connection string and replace:
+   - `<username>` with your MongoDB username
+   - `<password>` with your MongoDB password
+   - `<cluster-url>` with your cluster's host URL
 
 ## Email Configuration
 
-### Gmail Setup (Recommended)
-1. **Enable 2-Factor Authentication** on your Google account
-2. **Generate App Password**:
-   - Go to Google Account Settings → Security
-   - Under "How you sign in to Google" → App passwords
-   - Select "Mail" and "Other (Custom name)"
-   - Copy the 16-character password
-3. **Update environment variables**:
-   \`\`\`env
+### 📧 Gmail Setup (Recommended)
+1. **Enable 2-Step Verification** on your Google account.
+2. **Generate an App Password**:
+   - Go to **Google Account Settings → Security**.
+   - Under **"How you sign in to Google"**, select **App passwords**.
+   - Choose **"Mail"** as the app and **"Other (Custom name)"** for the device.
+   - Click **Generate** and copy the 16-character password.
+
+3. **Update environment variables**  
+   Add the following to your `.env.local` file:
+   ```env
    EMAIL_USER=your-email@gmail.com
    EMAIL_PASS=your-16-character-app-password
-   \`\`\`
 
-### Other Email Services
-Update the transporter configuration in `lib/email.ts`:
-\`\`\`javascript
-const transporter = nodemailer.createTransporter({
+
+### 📧 Other Email Services
+To use a different SMTP provider, update the transporter configuration in `lib/email.ts`:
+
+```javascript
+const transporter = nodemailer.createTransport({
   host: 'smtp.your-provider.com',
-  port: 587,
-  secure: false,
+  port: 587, // Use 465 for secure connections
+  secure: false, // Set to true if using port 465
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
-\`\`\`
 
-## Running the Application
 
-1. **Development mode**
-   \`\`\`bash
+## 🚀 Running the Application
+
+1. **Development Mode**
+   ```bash
    npm run dev
    # or
    yarn dev
-   \`\`\`
-   Open [http://localhost:3000](http://localhost:3000)
-
-2. **Production build**
-   \`\`\`bash
+   ```
+   
+   The application will be available at [http://localhost:3000](http://localhost:3000)
+2. **Production Build**
+   ```bash
    npm run build
    npm start
    # or
    yarn build
    yarn start
-   \`\`\`
+   ```
 
-## Usage Guide
+## 📖 Usage Guide
 
 ### For Users
-1. **Registration**: Sign up with email and password
-2. **Email Verification**: Enter OTP sent to your email
-3. **Submit Complaints**: Fill out the complaint form with title, description, category, and priority
-4. **Track Status**: View your complaints and their current status in the dashboard
-5. **Email Updates**: Receive notifications when complaint status changes
+1. **Registration**  
+   Sign up using your email and password.
+
+2. **Email Verification**  
+   Verify your account by entering the OTP sent to your email.
+
+3. **Submit Complaints**  
+   Fill out the complaint form with details including title, description, category, and priority.
+
+4. **Track Status**  
+   Monitor the status of your submitted complaints through your dashboard.
+
+5. **Email Updates**  
+   Receive email notifications whenever the status of your complaints changes.
 
 ### For Administrators
-1. **Admin Access**: Login with admin credentials
-2. **View All Complaints**: See all complaints from all users with filtering options
-3. **Update Status**: Change complaint status (Pending → In Progress → Resolved)
-4. **Delete Complaints**: Remove complaints if necessary
-5. **Email Notifications**: Receive notifications for new complaints and send updates to users
+1. **Admin Access**  
+   Log in using your administrator credentials.
 
-## API Endpoints
+2. **View All Complaints**  
+   Access all user complaints with filtering and sorting options.
 
-- `POST /api/complaints` - Create new complaint (authenticated users)
-- `GET /api/complaints` - Get complaints (filtered by user role)
-- `PATCH /api/complaints/[id]` - Update complaint status (admin only)
-- `DELETE /api/complaints/[id]` - Delete complaint (admin only)
+3. **Update Status**  
+   Change the status of complaints (e.g., Pending → In Progress → Resolved).
+
+4. **Delete Complaints**  
+   Remove complaints when necessary.
+
+5. **Email Notifications**  
+   Receive alerts for new complaints and send status updates to users.
+
+
+## 📌 API Endpoints
+
+### 📝 Complaints
+| Method     | Endpoint                      | Description                                | Access              |
+|------------|-------------------------------|--------------------------------------------|---------------------|
+| **POST**   | `/api/complaints`             | Create a new complaint                     | Authenticated users |
+| **GET**    | `/api/complaints`             | Retrieve complaints (filtered by user role)| Authenticated users |
+| **PATCH**  | `/api/complaints/[id]`        | Update complaint status                    | Admin only          |
+| **DELETE** | `/api/complaints/[id]`        | Delete a complaint                         | Admin only          |
+
+---
 
 ## Project Structure
 
-\`\`\`
+```
+
 complaint-management-app/
 ├── app/                          # Next.js App Router
 │   ├── admin/dashboard/          # Admin dashboard page
@@ -171,7 +206,9 @@ complaint-management-app/
 └── actions/                      # Server actions
     ├── auth.ts                   # Authentication actions
     └── complaints.ts             # Complaint management actions
-\`\`\`
+
+```
+---
 
 ## Screenshots
 
@@ -191,37 +228,42 @@ complaint-management-app/
 ![Mobile View](screenshots/mobile-view.png)
 *Fully responsive design optimized for mobile devices*
 
-## Deployment
+---
+
+## 🚀 Deployment
 
 ### Vercel (Recommended)
-1. Push code to GitHub repository
-2. Connect repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy automatically
+1. Push your code to the GitHub repository.
+2. Connect the repository to your Vercel account.
+3. Add the required environment variables in the Vercel dashboard.
+4. Vercel will automatically build and deploy your application.
+
 
 ### Other Platforms
-- Ensure Node.js 18+ support
-- Set all environment variables
-- Run `npm run build` before deployment
+- Ensure the platform supports **Node.js 18+**.
+- Set all required environment variables.
+- Run `npm run build` before deploying the application.
 
-## Environment Variables Reference
+## ⚙️ Environment Variables
 
-| Variable | Description | Required | Example |
-|----------|-------------|----------|---------|
-| `MONGODB_URI` | MongoDB connection string | Yes | `mongodb://localhost:27017/complaints` |
-| `JWT_SECRET` | Secret key for JWT tokens | Yes | `your-super-secure-secret-key` |
-| `EMAIL_USER` | Email service username | Yes | `your-email@gmail.com` |
-| `EMAIL_PASS` | Email service password/app password | Yes | `your-app-password` |
-| `NEXT_PUBLIC_BASE_URL` | Base URL for the application | No | `https://your-app.vercel.app` |
+```env
+MONGODB_URI=
+JWT_SECRET=
+EMAIL_USER=
+EMAIL_PASS=
+```
 
-## Troubleshooting
+---
+
+## 🛠 Troubleshooting
 
 ### Common Issues
 
-1. **Email not sending**
-   - Verify Gmail app password is correct
-   - Check spam folder
-   - Ensure 2FA is enabled on Google account
+1. **Email Not Sending**
+   - Verify that the Gmail app password is correct.
+   - Check your spam or junk folder.
+   - Ensure 2-Step Verification is enabled on your Google account.
+
 
 2. **Database connection failed**
    - Verify MongoDB is running (local) or connection string is correct (Atlas)
@@ -235,24 +277,36 @@ complaint-management-app/
    - Run `npm run lint` to check for code issues
    - Ensure all environment variables are set
 
-## Contributing
+---
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+## 🤝 Contributing
+
+1. Fork the repository.
+2. Create a feature branch:
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. Commit your changes:
+   ```bash
+   git commit -m "Add amazing feature"
+   ```
+4. Push to your branch:
+   ```bash
+   git push origin feature/amazing-feature
+   ```
 5. Open a Pull Request
 
-## License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 👤 Author
 
-## Support
-
-For support and questions:
-- Create an issue in the GitHub repository
-- Email: support@your-domain.com
+**OmXDev**  
+🔗 [GitHub Profile](https://github.com/OmXDev)
 
 ---
+
+## 📄 License
+
+MIT – feel free to use, modify, and build upon this project.
 
 **Built with ❤️ using Next.js, TypeScript, and MongoDB**
