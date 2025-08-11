@@ -18,16 +18,13 @@ interface Complaint {
 export default async function AdminDashboardPage({
   searchParams,
 }: {
-  searchParams?: {
-    status?: string
-    priority?: string
-  }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { id: adminId, role } = await requireAuth(["admin"])
 
   const awaitedSearchParams = await searchParams
-  const statusFilter = awaitedSearchParams?.status || "all"
-  const priorityFilter = awaitedSearchParams?.priority || "all"
+  const statusFilter = (awaitedSearchParams?.status as string) || "all"
+  const priorityFilter = (awaitedSearchParams?.priority as string) || "all"
 
   let complaints: Complaint[] = []
   let error: string | null = null
