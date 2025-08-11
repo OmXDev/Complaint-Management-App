@@ -215,9 +215,9 @@ export async function verifyEmailOtp(prevState: AuthState, formData: FormData): 
     user.otpExpires = undefined // Clear expiration
     await user.save()
 
-    // Now that email is verified, sign the token and redirect
     const token = await signToken({ id: user._id.toString(), role: user.role })
-    ;(await cookies()).set("auth_token", token, {
+    const cookieStore = await cookies()
+    cookieStore.set("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 2, // 2 hours
@@ -226,11 +226,13 @@ export async function verifyEmailOtp(prevState: AuthState, formData: FormData): 
 
     redirect(user.role === "admin" ? "/admin/dashboard" : "/user/dashboard")
   } catch (error) {
-    // Re-throw NEXT_REDIRECT errors
-    if (error && typeof error === "object" && "digest" in error && error.digest === "NEXT_REDIRECT") {
+    console.error("OTP verification error:", error)
+
+    // Check if this is a Next.js redirect error and re-throw it
+    if (error && typeof error === "object" && "digest" in error) {
       throw error
     }
-    console.error("OTP verification error:", error)
+
     return { message: "An unexpected error occurred during OTP verification." }
   }
 }

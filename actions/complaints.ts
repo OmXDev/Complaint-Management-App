@@ -62,6 +62,8 @@ export async function submitComplaint(prevState: ComplaintFormState, formData: F
     // Fetch an admin user for notifications (e.g., the first one found)
     const adminUser = await User.findOne({ role: "admin" })
 
+    console.log("Admin user lookup result:", adminUser ? `Found admin: ${adminUser.email}` : "No admin user found")
+
     // Email to User on New Complaint Submission
     if (submittingUser && submittingUser.email) {
       const userEmail = submittingUser.email
@@ -69,7 +71,13 @@ export async function submitComplaint(prevState: ComplaintFormState, formData: F
       const subject = `Your Complaint "${newComplaint.title}" Has Been Submitted`
       const text = `Dear ${username},\n\nYour complaint "${newComplaint.title}" has been successfully submitted.\n\nDetails:\nCategory: ${newComplaint.category}\nPriority: ${newComplaint.priority}\nDescription: ${newComplaint.description}\n\nWe will review it shortly.`
       const html = `<p>Dear ${username},</p><p>Your complaint "<strong>${newComplaint.title}</strong>" has been successfully submitted.</p><p><strong>Details:</strong></p><ul><li><strong>Category:</strong> ${newComplaint.category}</li><li><strong>Priority:</strong> ${newComplaint.priority}</li><li><strong>Description:</strong> ${newComplaint.description}</li></ul><p>We will review it shortly.</p>`
-      await sendEmail({ to: userEmail, subject, text, html })
+
+      try {
+        const userEmailResult = await sendEmail({ to: userEmail, subject, text, html })
+        console.log("User email result:", userEmailResult)
+      } catch (error) {
+        console.error("Failed to send user email:", error)
+      }
     }
 
     // Email to Admin on New Complaint Submission
@@ -78,7 +86,19 @@ export async function submitComplaint(prevState: ComplaintFormState, formData: F
       const subject = `New Complaint Submitted: ${newComplaint.title}`
       const text = `A new complaint has been submitted by ${submittingUser?.username || "a user"}.\n\nTitle: ${newComplaint.title}\nCategory: ${newComplaint.category}\nPriority: ${newComplaint.priority}\nDescription: ${newComplaint.description}\n\nComplaint ID: ${newComplaint._id}`
       const html = `<p>A new complaint has been submitted by <strong>${submittingUser?.username || "a user"}</strong>.</p><p><strong>Details:</strong></p><ul><li><strong>Title:</strong> ${newComplaint.title}</li><li><strong>Category:</strong> ${newComplaint.category}</li><li><strong>Priority:</strong> ${newComplaint.priority}</li><li><strong>Description:</strong> ${newComplaint.description}</li></ul><p><strong>Complaint ID:</strong> ${newComplaint._id}</p>`
-      await sendEmail({ to: adminEmail, subject, text, html })
+
+      console.log(`Attempting to send admin notification email to: ${adminEmail}`)
+      try {
+        const adminEmailResult = await sendEmail({ to: adminEmail, subject, text, html })
+        console.log("Admin email result:", adminEmailResult)
+        if (!adminEmailResult.success) {
+          console.error("Admin email failed:", adminEmailResult.message)
+        }
+      } catch (error) {
+        console.error("Failed to send admin email:", error)
+      }
+    } else {
+      console.warn("No admin user found or admin user has no email address. Admin notification not sent.")
     }
 
     return { success: true, message: "Complaint submitted successfully!" }
@@ -141,7 +161,12 @@ export async function updateComplaintStatus(id: string, newStatus: "Pending" | "
     // Fetch an admin user for notifications (e.g., the first one found)
     const adminUser = await User.findOne({ role: "admin" })
 
-    // Send email notification ONLY to the admin
+    console.log(
+      "Admin user lookup for status update:",
+      adminUser ? `Found admin: ${adminUser.email}` : "No admin user found",
+    )
+
+    // Send email notification to the admin
     if (adminUser && adminUser.email) {
       const adminEmail = adminUser.email
       const subject = `Complaint Status Updated: ${complaint.title}`
@@ -155,9 +180,21 @@ export async function updateComplaintStatus(id: string, newStatus: "Pending" | "
       const text = `The status of complaint "${complaint.title}" has been updated to: ${newStatus}.\n\nUpdated On: ${updateDate}\nComplaint ID: ${complaint._id}`
       const html = `<p>The status of complaint "<strong>${complaint.title}</strong>" has been updated to: <strong>${newStatus}</strong>.</p><p><strong>Updated On:</strong> ${updateDate}</p><p><strong>Complaint ID:</strong> ${complaint._id}</p>`
 
-      await sendEmail({ to: adminEmail, subject, text, html })
+      console.log(`Attempting to send admin status update email to: ${adminEmail}`)
+      try {
+        const adminEmailResult = await sendEmail({ to: adminEmail, subject, text, html })
+        console.log("Admin status update email result:", adminEmailResult)
+        if (!adminEmailResult.success) {
+          console.error("Admin status update email failed:", adminEmailResult.message)
+        }
+      } catch (error) {
+        console.error("Failed to send admin status update email:", error)
+      }
+    } else {
+      console.warn("No admin user found or admin user has no email address. Admin status update notification not sent.")
     }
 
+    // Send email notification to the user for resolved/in progress status
     if ((newStatus === "Resolved" || newStatus === "In Progress") && complaint.userId && complaint.userId.email) {
       const userEmail = complaint.userId.email
       const username = complaint.userId.username || "User"
@@ -173,7 +210,12 @@ export async function updateComplaintStatus(id: string, newStatus: "Pending" | "
       const text = `Dear ${username},\n\nYour complaint "${complaint.title}" has been updated to: ${newStatus}.\n\nUpdated On: ${updateDate}\n\nThank you for your patience.`
       const html = `<p>Dear ${username},</p><p>Your complaint "<strong>${complaint.title}</strong>" has been updated to: <strong>${newStatus}</strong>.</p><p><strong>Updated On:</strong> ${updateDate}</p><p>Thank you for your patience.</p>`
 
-      await sendEmail({ to: userEmail, subject, text, html })
+      try {
+        const userEmailResult = await sendEmail({ to: userEmail, subject, text, html })
+        console.log("User status update email result:", userEmailResult)
+      } catch (error) {
+        console.error("Failed to send user status update email:", error)
+      }
     }
 
     return { success: true, message: "Complaint status updated successfully." }
