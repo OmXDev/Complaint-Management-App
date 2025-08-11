@@ -67,14 +67,14 @@ export async function submitComplaint(prevState: ComplaintFormState, formData: F
     try {
       // Try multiple admin lookup strategies
       adminUser = await User.findOne({ role: "admin" }).lean()
-      console.log("Primary admin lookup result:", adminUser ? `Found admin: ${adminUser.email}` : "No admin found")
+      console.log("Primary admin lookup result:", adminUser ? `Found admin: ${(adminUser as { email?: string }).email}` : "No admin found")
 
       if (!adminUser) {
         // Fallback: try case-insensitive search
         adminUser = await User.findOne({ role: { $regex: /^admin$/i } }).lean()
         console.log(
           "Case-insensitive admin lookup result:",
-          adminUser ? `Found admin: ${adminUser.email}` : "No admin found",
+          adminUser ? `Found admin: ${(adminUser as { email?: string }).email}` : "No admin found",
         )
       }
 
@@ -108,8 +108,8 @@ export async function submitComplaint(prevState: ComplaintFormState, formData: F
       }
     }
 
-    if (adminUser && adminUser.email) {
-      const adminEmail = adminUser.email
+    if (adminUser && (adminUser as any).email) {
+      const adminEmail = (adminUser as any).email
       const subject = `New Complaint Submitted: ${newComplaint.title}`
       const text = `A new complaint has been submitted by ${submittingUser?.username || "a user"}.\n\nTitle: ${newComplaint.title}\nCategory: ${newComplaint.category}\nPriority: ${newComplaint.priority}\nDescription: ${newComplaint.description}\n\nComplaint ID: ${newComplaint._id}`
       const html = `<p>A new complaint has been submitted by <strong>${submittingUser?.username || "a user"}</strong>.</p><p><strong>Details:</strong></p><ul><li><strong>Title:</strong> ${newComplaint.title}</li><li><strong>Category:</strong> ${newComplaint.category}</li><li><strong>Priority:</strong> ${newComplaint.priority}</li><li><strong>Description:</strong> ${newComplaint.description}</li></ul><p><strong>Complaint ID:</strong> ${newComplaint._id}</p>`
@@ -141,11 +141,13 @@ export async function submitComplaint(prevState: ComplaintFormState, formData: F
         }
       } catch (error) {
         console.error("❌ Exception during admin email send:", error)
-        console.error("Error details:", {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        })
+        if (error && typeof error === "object") {
+          console.error("Error details:", {
+            name: (error as any).name,
+            message: (error as any).message,
+            stack: (error as any).stack,
+          })
+        }
       }
     } else {
       console.error("❌ CRITICAL: No admin user found or admin user has no email address!")
@@ -217,21 +219,21 @@ export async function updateComplaintStatus(id: string, newStatus: "Pending" | "
     try {
       // Try multiple admin lookup strategies
       adminUser = await User.findOne({ role: "admin" }).lean()
-      console.log("Primary admin lookup result:", adminUser ? `Found admin: ${adminUser.email}` : "No admin found")
+      console.log("Primary admin lookup result:", adminUser ? `Found admin: ${(adminUser as any).email}` : "No admin found")
 
       if (!adminUser) {
         adminUser = await User.findOne({ role: { $regex: /^admin$/i } }).lean()
         console.log(
           "Case-insensitive admin lookup result:",
-          adminUser ? `Found admin: ${adminUser.email}` : "No admin found",
+          adminUser ? `Found admin: ${(adminUser as { email?: string }).email}` : "No admin found",
         )
       }
     } catch (dbError) {
       console.error("Database error during admin lookup for status update:", dbError)
     }
 
-    if (adminUser && adminUser.email) {
-      const adminEmail = adminUser.email
+    if (adminUser && (adminUser as any).email) {
+      const adminEmail = (adminUser as any).email
       const subject = `Complaint Status Updated: ${complaint.title}`
       const updateDate = new Date().toLocaleDateString("en-US", {
         year: "numeric",
@@ -259,9 +261,9 @@ export async function updateComplaintStatus(id: string, newStatus: "Pending" | "
       } catch (error) {
         console.error("❌ Exception during admin status update email:", error)
         console.error("Error details:", {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
+          name: (error as any).name,
+          message: (error as any).message,
+          stack: (error as any).stack,
         })
       }
     } else {
