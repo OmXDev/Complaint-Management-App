@@ -59,38 +59,10 @@ export async function submitComplaint(prevState: ComplaintFormState, formData: F
     // Fetch the user who submitted the complaint
     const submittingUser = await User.findById(userId)
 
-    console.log("=== ADMIN EMAIL DEBUG - NEW COMPLAINT ===")
-    console.log("Environment:", process.env.NODE_ENV)
-    console.log("Database connection status:", require("mongoose").connection.readyState)
+    // Fetch an admin user for notifications (e.g., the first one found)
+    const adminUser = await User.findOne({ role: "admin" })
 
-    let adminUser = null
-    try {
-      // Try multiple admin lookup strategies
-      adminUser = await User.findOne({ role: "admin" }).lean()
-      console.log("Primary admin lookup result:", adminUser ? `Found admin: ${(adminUser as { email?: string }).email}` : "No admin found")
-
-      if (!adminUser) {
-        // Fallback: try case-insensitive search
-        adminUser = await User.findOne({ role: { $regex: /^admin$/i } }).lean()
-        console.log(
-          "Case-insensitive admin lookup result:",
-          adminUser ? `Found admin: ${(adminUser as { email?: string }).email}` : "No admin found",
-        )
-      }
-
-      if (!adminUser) {
-        // Fallback: get all users and check roles
-        const allUsers = await User.find({}).select("role email username").lean()
-        console.log(
-          "All users in database:",
-          allUsers.map((u) => ({ role: u.role, email: u.email })),
-        )
-        adminUser = allUsers.find((u) => u.role === "admin" || u.role === "Admin")
-        console.log("Manual admin search result:", adminUser ? `Found admin: ${adminUser.email}` : "No admin found")
-      }
-    } catch (dbError) {
-      console.error("Database error during admin lookup:", dbError)
-    }
+    console.log("Admin user lookup result:", adminUser ? `Found admin: ${adminUser.email}` : "No admin user found")
 
     // Email to User on New Complaint Submission
     if (submittingUser && submittingUser.email) {
@@ -108,50 +80,25 @@ export async function submitComplaint(prevState: ComplaintFormState, formData: F
       }
     }
 
-    if (adminUser && (adminUser as any).email) {
-      const adminEmail = (adminUser as any).email
+    // Email to Admin on New Complaint Submission
+    if (adminUser && adminUser.email) {
+      const adminEmail = adminUser.email
       const subject = `New Complaint Submitted: ${newComplaint.title}`
       const text = `A new complaint has been submitted by ${submittingUser?.username || "a user"}.\n\nTitle: ${newComplaint.title}\nCategory: ${newComplaint.category}\nPriority: ${newComplaint.priority}\nDescription: ${newComplaint.description}\n\nComplaint ID: ${newComplaint._id}`
       const html = `<p>A new complaint has been submitted by <strong>${submittingUser?.username || "a user"}</strong>.</p><p><strong>Details:</strong></p><ul><li><strong>Title:</strong> ${newComplaint.title}</li><li><strong>Category:</strong> ${newComplaint.category}</li><li><strong>Priority:</strong> ${newComplaint.priority}</li><li><strong>Description:</strong> ${newComplaint.description}</li></ul><p><strong>Complaint ID:</strong> ${newComplaint._id}</p>`
 
-      console.log(`=== SENDING ADMIN EMAIL ===`)
-      console.log(`To: ${adminEmail}`)
-      console.log(`Subject: ${subject}`)
-      console.log(`Email service config check:`)
-      console.log(`EMAIL_USER exists: ${!!process.env.EMAIL_USER}`)
-      console.log(`EMAIL_PASS exists: ${!!process.env.EMAIL_PASS}`)
-
+      console.log(`Attempting to send admin notification email to: ${adminEmail}`)
       try {
         const adminEmailResult = await sendEmail({ to: adminEmail, subject, text, html })
-        console.log("=== ADMIN EMAIL RESULT ===", adminEmailResult)
-
+        console.log("Admin email result:", adminEmailResult)
         if (!adminEmailResult.success) {
-          console.error("❌ Admin email failed:", adminEmailResult.message)
-          // Try alternative email sending approach
-          console.log("Attempting alternative email send...")
-          const retryResult = await sendEmail({
-            to: adminEmail,
-            subject: `[RETRY] ${subject}`,
-            text,
-            html,
-          })
-          console.log("Retry email result:", retryResult)
-        } else {
-          console.log("✅ Admin email sent successfully!")
+          console.error("Admin email failed:", adminEmailResult.message)
         }
       } catch (error) {
-        console.error("❌ Exception during admin email send:", error)
-        if (error && typeof error === "object") {
-          console.error("Error details:", {
-            name: (error as any).name,
-            message: (error as any).message,
-            stack: (error as any).stack,
-          })
-        }
+        console.error("Failed to send admin email:", error)
       }
     } else {
-      console.error("❌ CRITICAL: No admin user found or admin user has no email address!")
-      console.log("Admin user object:", adminUser)
+      console.warn("No admin user found or admin user has no email address. Admin notification not sent.")
     }
 
     return { success: true, message: "Complaint submitted successfully!" }
@@ -211,29 +158,17 @@ export async function updateComplaintStatus(id: string, newStatus: "Pending" | "
       return { success: false, message: "Complaint not found." }
     }
 
-    console.log("=== ADMIN EMAIL DEBUG - STATUS UPDATE ===")
-    console.log("Environment:", process.env.NODE_ENV)
-    console.log("Updating complaint:", id, "to status:", newStatus)
+    // Fetch an admin user for notifications (e.g., the first one found)
+    const adminUser = await User.findOne({ role: "admin" })
 
-    let adminUser = null
-    try {
-      // Try multiple admin lookup strategies
-      adminUser = await User.findOne({ role: "admin" }).lean()
-      console.log("Primary admin lookup result:", adminUser ? `Found admin: ${(adminUser as any).email}` : "No admin found")
+    console.log(
+      "Admin user lookup for status update:",
+      adminUser ? `Found admin: ${adminUser.email}` : "No admin user found",
+    )
 
-      if (!adminUser) {
-        adminUser = await User.findOne({ role: { $regex: /^admin$/i } }).lean()
-        console.log(
-          "Case-insensitive admin lookup result:",
-          adminUser ? `Found admin: ${(adminUser as { email?: string }).email}` : "No admin found",
-        )
-      }
-    } catch (dbError) {
-      console.error("Database error during admin lookup for status update:", dbError)
-    }
-
-    if (adminUser && (adminUser as any).email) {
-      const adminEmail = (adminUser as any).email
+    // Send email notification to the admin
+    if (adminUser && adminUser.email) {
+      const adminEmail = adminUser.email
       const subject = `Complaint Status Updated: ${complaint.title}`
       const updateDate = new Date().toLocaleDateString("en-US", {
         year: "numeric",
@@ -245,30 +180,18 @@ export async function updateComplaintStatus(id: string, newStatus: "Pending" | "
       const text = `The status of complaint "${complaint.title}" has been updated to: ${newStatus}.\n\nUpdated On: ${updateDate}\nComplaint ID: ${complaint._id}`
       const html = `<p>The status of complaint "<strong>${complaint.title}</strong>" has been updated to: <strong>${newStatus}</strong>.</p><p><strong>Updated On:</strong> ${updateDate}</p><p><strong>Complaint ID:</strong> ${complaint._id}</p>`
 
-      console.log(`=== SENDING ADMIN STATUS UPDATE EMAIL ===`)
-      console.log(`To: ${adminEmail}`)
-      console.log(`Subject: ${subject}`)
-
+      console.log(`Attempting to send admin status update email to: ${adminEmail}`)
       try {
         const adminEmailResult = await sendEmail({ to: adminEmail, subject, text, html })
-        console.log("=== ADMIN STATUS UPDATE EMAIL RESULT ===", adminEmailResult)
-
+        console.log("Admin status update email result:", adminEmailResult)
         if (!adminEmailResult.success) {
-          console.error("❌ Admin status update email failed:", adminEmailResult.message)
-        } else {
-          console.log("✅ Admin status update email sent successfully!")
+          console.error("Admin status update email failed:", adminEmailResult.message)
         }
       } catch (error) {
-        console.error("❌ Exception during admin status update email:", error)
-        console.error("Error details:", {
-          name: (error as any).name,
-          message: (error as any).message,
-          stack: (error as any).stack,
-        })
+        console.error("Failed to send admin status update email:", error)
       }
     } else {
-      console.error("❌ CRITICAL: No admin user found for status update notification!")
-      console.log("Admin user object:", adminUser)
+      console.warn("No admin user found or admin user has no email address. Admin status update notification not sent.")
     }
 
     // Send email notification to the user for resolved/in progress status
