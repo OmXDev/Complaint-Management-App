@@ -3,10 +3,11 @@ import { authenticateApiRequest } from "@/lib/auth"
 import { updateComplaintStatusService, deleteComplaintService } from "@/lib/complaint-service"
 import { AuthError } from "@/lib/errors"
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: adminId, role: adminRole } = await authenticateApiRequest(request, ["admin"])
-    const complaintId = params.id
+    const { id } = await params
+    const complaintId = id
     const { status } = await request.json()
 
     if (!status) {
@@ -24,10 +25,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: adminId, role: adminRole } = await authenticateApiRequest(request, ["admin"])
-    const complaintId = params.id
+    const { id } = await params
+    const complaintId = id
 
     const result = await deleteComplaintService(complaintId, adminId)
     return NextResponse.json({ success: true, message: result.message }, { status: 200 })
