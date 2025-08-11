@@ -3,8 +3,9 @@ import Link from "next/link"
 import { isAuthenticated } from "@/lib/auth" // Import isAuthenticated
 import { redirect } from "next/navigation" // Import redirect
 
-export default async function LoginPage({ searchParams }: { searchParams: { role?: string } }) {
-  const initialRole = searchParams.role as "user" | "admin" | undefined
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ role?: string }> }) {
+  const awaitedSearchParams = await searchParams
+  const initialRole = awaitedSearchParams.role as "user" | "admin" | undefined
 
   // Check if user is already authenticated
   const { id, role } = await isAuthenticated()

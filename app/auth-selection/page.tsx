@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { isAuthenticated } from "@/lib/auth" // Import isAuthenticated
 import { redirect } from "next/navigation" // Import redirect
 
-export default async function AuthSelectionPage({ searchParams }: { searchParams: { type?: string } }) {
-  const authType = searchParams.type || "auth" // 'login' or 'signup'
+export default async function AuthSelectionPage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
+  const awaitedSearchParams = await searchParams
+  const authType = awaitedSearchParams.type || "auth" // 'login' or 'signup'
 
   // Check if user is already authenticated
   const { id, role } = await isAuthenticated()
